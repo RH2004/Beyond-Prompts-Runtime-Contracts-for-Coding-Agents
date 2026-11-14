@@ -1,0 +1,286 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "eku.schema.json",
+  "title": "Engineering Knowledge Unit (draft v0.2)",
+  "type": "object",
+  "required": [
+    "id",
+    "version",
+    "title",
+    "category",
+    "scope",
+    "trigger",
+    "severity",
+    "stage",
+    "contract",
+    "verification",
+    "failure_policy",
+    "source",
+    "rationale",
+    "limitations",
+    "check"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^(SEC|ARCH|STY|TST|PERF|DOC|PERM)-[A-Z0-9]+-[0-9]{3}$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "category": {
+      "enum": [
+        "security",
+        "architecture",
+        "style",
+        "testing",
+        "performance",
+        "documentation",
+        "permissions"
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "properties": {
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "frameworks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "glob patterns"
+        }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "properties": {
+        "task_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "severity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "stage": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "enum": [
+          "pre_action",
+          "post_edit",
+          "post_execution",
+          "pre_acceptance"
+        ]
+      }
+    },
+    "contract": {
+      "type": "object",
+      "properties": {
+        "preconditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "postconditions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "preconditions = assumes, postconditions = guarantees (assume/guarantee split, decision 0014)"
+    },
+    "verification": {
+      "type": "object",
+      "required": [
+        "method"
+      ],
+      "properties": {
+        "method": {
+          "enum": [
+            "static_analysis",
+            "test",
+            "diff_rule",
+            "policy",
+            "human_review"
+          ]
+        },
+        "tool": {
+          "type": "string"
+        },
+        "rule_ref": {
+          "type": "string",
+          "description": "e.g. a semgrep rule id or import-linter contract"
+        },
+        "unknown_when": {
+          "type": "string",
+          "description": "conditions under which the check is not evaluable; never count as pass"
+        }
+      }
+    },
+    "failure_policy": {
+      "enum": [
+        "block",
+        "request_revision",
+        "warn",
+        "escalate_to_human"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "reference"
+      ],
+      "properties": {
+        "reference": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
+      }
+    },
+    "rationale": {
+      "type": "string"
+    },
+    "examples": {
+      "type": "object",
+      "properties": {
+        "pass": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fail": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "string"
+    },
+    "confidence": {
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "conflicts_with": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "check": {
+      "description": "Machine-executable check (decision 0014). The kind determines the stage and target it evaluates.",
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "command_deny",
+            "path_deny",
+            "content_deny",
+            "import_deny",
+            "output_deny",
+            "repo_command"
+          ]
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "regexes (command_deny, content_deny, output_deny)"
+        },
+        "globs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "path globs (path_deny)"
+        },
+        "forbidden_prefixes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "module prefixes (import_deny)"
+        },
+        "command_pattern": {
+          "type": "string",
+          "description": "regex selecting which executed commands output_deny inspects"
+        },
+        "command": {
+          "type": "string",
+          "description": "shell command run in the sandbox (repo_command); exit 0 = pass"
+        },
+        "timeout_s": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "evidence_hash": {
+      "type": "string",
+      "description": "hash of the rule's check spec at validation time; mismatch -> unknown(stale_evidence) (decision 0014)"
+    },
+    "applicability_note": {
+      "type": "string",
+      "description": "human-readable applicability predicate; the machine predicate is scope + trigger"
+    }
+  }
+}

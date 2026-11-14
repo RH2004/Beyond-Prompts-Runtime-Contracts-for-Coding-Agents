@@ -1,0 +1,43 @@
+# Local-model pilot configuration (Draft). Identical to pilot.yaml except the model block.
+# Serves Qwen3.6-35B-A3B (Unsloth UD-IQ4_XS GGUF) with llama.cpp's llama-server; see scripts/serve_local.sh.
+# Non-thinking mode (set at the server): thinking is slow on this hardware, and the model card advises >=128K
+# context to preserve thinking, which this machine cannot hold. Sampling follows the card's Instruct-mode settings,
+# except presence_penalty, which is left at 0 because it would penalise reusing tokens in code (documented deviation).
+agent:
+  system_template: |
+    You are a software engineer working in a git repository at /repo. You can run bash commands and use editing
+    tools. Files in the repository can only be modified with the editing tools; bash has read-only access
+    to the repository. You may write scratch files under /tmp.
+    Use the `view`, `create` and `str_replace` tools to read and change repository files; there are no other
+    editing tools. Use bash for everything else.
+    {% if rules_block %}
+    {{rules_block}}
+    {% endif %}
+  instance_template: |
+    Task:
+    {{task}}
+
+    Work step by step: inspect the relevant code, make the change, and check it. When you are finished, run
+    `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT` as a command on its own.
+  step_limit: 60
+  cost_limit: 0               # local model: no monetary cost (0 = no limit)
+  wall_time_limit_seconds: 3600
+  max_feedback_events: 5
+  issues_per_feedback: 5
+  feedback_char_cap: 4000
+model:
+  model_name: openai/qwen3.6-35b-a3b
+  cost_tracking: ignore_errors      # no price map for a local model; cost is recorded as missing, never estimated
+  model_kwargs:
+    api_base: http://127.0.0.1:8080/v1
+    api_key: local-no-secret
+    temperature: 0.7
+    top_p: 0.8
+    seed: 1000                # base seed; run.py uses seed + run index
+    max_tokens: 4096
+    extra_body: {top_k: 20}
+environment:
+  timeout: 120
+  env:
+    PYTHONDONTWRITEBYTECODE: "1"
+  run_args: ["--rm", "--network", "none"]

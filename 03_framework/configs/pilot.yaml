@@ -1,0 +1,43 @@
+# Pilot configuration. Identical for every condition; only {{rules_block}} (C1/C1r) and the tool list (C2+) vary.
+# FREEZE (hash recorded in each run manifest) before the pilot. Values marked TBD are set at freeze.
+agent:
+  system_template: |
+    You are a software engineer working in a git repository at /repo. You can run bash commands and use editing
+    tools. Files in the repository can only be modified with the editing tools; bash has read-only access
+    to the repository. You may write scratch files under /tmp.
+    Use the `view`, `create` and `str_replace` tools to read and change repository files; there are no other
+    editing tools. Use bash for everything else.
+    {% if rules_block %}
+    {{rules_block}}
+    {% endif %}
+  instance_template: |
+    Task:
+    {{task}}
+
+    Work step by step: inspect the relevant code, make the change, and check it. When you are finished, run
+    `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT` as a command on its own.
+  step_limit: 60              # TBD at freeze
+  cost_limit: 1.0             # USD per run; TBD at freeze
+  wall_time_limit_seconds: 1800
+  max_feedback_events: 5      # shared by C3 and C4 (decision 0015)
+  issues_per_feedback: 5
+  feedback_char_cap: 4000
+model:
+  # Decision 0002 revised 2026-11-02 (Draft): pilot model is Qwen3-Coder-Next via OpenRouter, pinned to one provider.
+  model_name: openrouter/qwen/qwen3-coder-next
+  model_kwargs:
+    # Sampling follows the Qwen3-Coder-Next model card (temperature 1.0, top_p 0.95). The first smoke runs used
+    # temperature 0, which produced repetition loops (see 05_experiments/pilot/DIAGNOSTICS_2026-11-03.md).
+    # top_k 40 (also on the card) is not among the parameters the pinned provider lists, so it cannot be set: deviation.
+    temperature: 1.0
+    top_p: 0.95
+    seed: 1000                # base seed; run.py uses seed + run index, so repetitions differ but are reproducible in principle
+    max_tokens: 4096
+    extra_body:
+      provider: {order: [Parasail], allow_fallbacks: false}   # single endpoint, bf16; never silently rerouted
+      usage: {include: true}                                  # provider-reported cost in every response
+environment:
+  timeout: 120
+  env:
+    PYTHONDONTWRITEBYTECODE: "1"
+  run_args: ["--rm", "--network", "none"]   # pilot: no network inside the sandbox; the model is called from the host

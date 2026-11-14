@@ -1,0 +1,2 @@
+# pilot_v2 is partial (stopped 2026-11-14)
+Planned: PILOT2-001..003 x 6 conditions x 5 runs = 90. Finished: 41 (the rest hit the free-tier daily request cap and were stopped by the owner). Not scored, not part of any reported result unless scored later and labelled exploratory. The `_infra_failed/` folder holds quota-failed attempts (HTTP 429, `PerDayPerProjectPerModel-FreeTier`, limit 500), not model failures.

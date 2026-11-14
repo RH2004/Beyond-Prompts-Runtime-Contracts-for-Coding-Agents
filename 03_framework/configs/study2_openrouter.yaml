@@ -1,0 +1,37 @@
+# Hosted-model pilot configuration (Draft): Gemini 3.1 Flash-Lite, the cheapest Gemini tier, pinned to a stable id.
+# Identical to pilot_local.yaml except the model block and a monetary cost cap. Key comes from GEMINI_API_KEY in the
+# environment and is never written to the project. Thinking is off by default on this model (same for every condition).
+agent:
+  system_template: |
+    You are a software engineer working in a git repository at /repo. You can run bash commands and use editing
+    tools. Files in the repository can only be modified with the editing tools; bash has read-only access
+    to the repository. You may write scratch files under /tmp.
+    Use the `view`, `create` and `str_replace` tools to read and change repository files; there are no other
+    editing tools. Use bash for everything else.
+    {% if rules_block %}
+    {{rules_block}}
+    {% endif %}
+  instance_template: |
+    Task:
+    {{task}}
+
+    Work step by step: inspect the relevant code, make the change, and check it. When you are finished, run
+    `echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT` as a command on its own.
+  step_limit: 60
+  cost_limit: 0.08            # USD per run; hard safety cap (study budget is $3 in total)
+  wall_time_limit_seconds: 3600
+  max_feedback_events: 5
+  issues_per_feedback: 5
+  feedback_char_cap: 4000
+model:
+  model_name: openrouter/deepseek/deepseek-v4.1-flash
+  cost_tracking: ignore_errors      # LiteLLM price map if available; otherwise cost is recorded as missing, never estimated
+  model_kwargs:
+    temperature: 1.0
+    seed: 1000                # base seed; run.py uses seed + run index
+    max_tokens: 4096
+environment:
+  timeout: 120
+  env:
+    PYTHONDONTWRITEBYTECODE: "1"
+  run_args: ["--rm", "--network", "none"]

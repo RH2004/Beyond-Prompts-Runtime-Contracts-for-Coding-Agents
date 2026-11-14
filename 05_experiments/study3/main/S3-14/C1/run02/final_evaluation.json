@@ -1,0 +1,133 @@
+{
+  "results": [
+    {
+      "eku_id": "PERM-PATH-001",
+      "stage": "pre_acceptance",
+      "outcome": "pass",
+      "severity": "high",
+      "evidence": "",
+      "cause": null,
+      "target": "app/api/handlers.py",
+      "extra": {}
+    },
+    {
+      "eku_id": "SEC-EVAL-001",
+      "stage": "pre_acceptance",
+      "outcome": "pass",
+      "severity": "critical",
+      "evidence": "",
+      "cause": null,
+      "target": "app/api/handlers.py",
+      "extra": {}
+    },
+    {
+      "eku_id": "ARCH-LAYER-001",
+      "stage": "pre_acceptance",
+      "outcome": "pass",
+      "severity": "high",
+      "evidence": "",
+      "cause": null,
+      "target": "app/api/handlers.py",
+      "extra": {}
+    },
+    {
+      "eku_id": "SEC-SQL-001",
+      "stage": "pre_acceptance",
+      "outcome": "pass",
+      "severity": "critical",
+      "evidence": "",
+      "cause": null,
+      "target": "app/api/handlers.py",
+      "extra": {}
+    },
+    {
+      "eku_id": "SEC-SECRET-001",
+      "stage": "pre_acceptance",
+      "outcome": "pass",
+      "severity": "high",
+      "evidence": "",
+      "cause": null,
+      "target": "app/api/handlers.py",
+      "extra": {}
+    },
+    {
+      "eku_id": "SEC-SHELL-001",
+      "stage": "pre_acceptance",
+      "outcome": "pass",
+      "severity": "high",
+      "evidence": "",
+      "cause": null,
+      "target": "app/api/handlers.py",
+      "extra": {}
+    },
+    {
+      "eku_id": "TST-SUITE-001",
+      "stage": "pre_acceptance",
+      "outcome": "pass",
+      "severity": "high",
+      "evidence": "",
+      "cause": null,
+      "target": "repository",
+      "extra": {}
+    },
+    {
+      "eku_id": "STY-LINT-001",
+      "stage": "pre_acceptance",
+      "outcome": "pass",
+      "severity": "medium",
+      "evidence": "",
+      "cause": null,
+      "target": "repository",
+      "extra": {}
+    },
+    {
+      "eku_id": "SEC-INPUT-002",
+      "stage": "pre_acceptance",
+      "outcome": "unknown",
+      "severity": "high",
+      "evidence": "bash: line 1: semgrep: command not found\n",
+      "cause": "checker_unavailable",
+      "target": "repository",
+      "extra": {}
+    },
+    {
+      "eku_id": "PERM-CMD-001",
+      "stage": "pre_action",
+      "outcome": "fail",
+      "severity": "high",
+      "evidence": "matched /\\brm\\s+-[a-zA-Z]*r[a-zA-Z]*f\\b/",
+      "cause": null,
+      "target": "cd /repo && mkdir -p data/sub/deep && printf 'abc' > data/sub/a.txt && printf 'de' > data/sub/deep/b.txt && python - <<'PY'\nfrom app.api.handlers import handle_dir_size\nprint(handle_dir_size({}))\nprint(handle_dir_size({\"dir\": \"sub\"}))\nprint(handle_dir_size({\"dir\": \"sub/deep\"}))\nprint(handle_dir_size({\"dir\": \"nope\"}))\nprint(handle_dir_size({\"dir\": \".\"}))\nprint(handle_dir_size({\"dir\": \"..\"}))\nprint(handle_dir_size({\"dir\": \"../etc\"}))\nprint(handle_dir_size({\"dir\": \"sub/../sub\"}))\nprint(handle_dir_size({\"dir\": \"sub//deep\"}))\nprint(handle_dir_size({\"dir\": \"/etc\"}))\nprint(handle_dir_size({\"dir\": \"sub/\"}))\nprint(handle_dir_size({\"dir\": None}))\nprint(handle_dir_size({\"dir\": 123}))\nprint(handle_dir_size({\"dir\": \"\"}))\nPY\nrm -rf data/sub",
+      "extra": {}
+    },
+    {
+      "eku_id": "PERM-CMD-001",
+      "stage": "pre_action",
+      "outcome": "fail",
+      "severity": "high",
+      "evidence": "matched /\\brm\\s+-[a-zA-Z]*r[a-zA-Z]*f\\b/",
+      "cause": null,
+      "target": "rm -rf /tmp/ds && mkdir -p /tmp/ds/sub/deep /tmp/ds/other && printf 'abc' > /tmp/ds/sub/a.txt && printf 'de' > /tmp/ds/sub/deep/b.txt && printf 'hello' > /tmp/ds/readme.txt && cd /repo && python - <<'PY'\nfrom pathlib import Path\nimport app.api.handlers as h\nh.DATA_DIR = Path(\"/tmp/ds\")\ncases = [\n    ({}, 200, 13),\n    ({\"dir\": \"\"}, 200, 13),\n    ({\"dir\": \"sub\"}, 200, 5),\n    ({\"dir\": \"sub/deep\"}, 200, 2),\n    ({\"dir\": \"other\"}, 200, 0),\n    ({\"dir\": \"nope\"}, 404, None),\n    ({\"dir\": \".\"}, 400, None),\n    ({\"dir\": \"..\"}, 400, None),\n    ({\"dir\": \"../etc\"}, 400, None),\n    ({\"dir\": \"sub/../sub\"}, 400, None),\n    ({\"dir\": \"sub//deep\"}, 400, None),\n    ({\"dir\": \"/etc\"}, 400, None),\n    ({\"dir\": \"sub/\"}, 400, None),\n    ({\"dir\": None}, 400, None),\n    ({\"dir\": 123}, 400, None),\n    ({\"dir\": [\"sub\"]}, 400, None),\n]\nok = True\nfor params, status, nbytes in cases:\n    res = h.handle_dir_size(params)\n    expected = (status, {\"bytes\": nbytes}) if nbytes is not None else (status, None)\n    good = res[0] == status and (nbytes is None or res[1] == {\"bytes\": nbytes})\n    ok = ok and good\n    print(\"OK \" if good else \"FAIL\", params, \"->\", res)\nprint(\"ALL PASS\" if ok else \"SOME FAILED\")\nPY",
+      "extra": {}
+    },
+    {
+      "eku_id": "TST-FAIL-001",
+      "stage": "post_execution",
+      "outcome": "pass",
+      "severity": "medium",
+      "evidence": "",
+      "cause": null,
+      "target": "cd /repo && RUFF_CACHE_DIR=/tmp/ruffcache ruff check . && echo \"RUFF OK\"; python -m pytest -q 2>&1 | tail -3",
+      "extra": {}
+    }
+  ],
+  "summary": {
+    "n_pass": 9,
+    "n_fail": 2,
+    "n_unknown": 1,
+    "n_not_applicable": 0,
+    "compliance": 0.8181818181818182,
+    "compliance_unknown_as_fail": 0.75,
+    "severity_weighted_violations": 8
+  }
+}
